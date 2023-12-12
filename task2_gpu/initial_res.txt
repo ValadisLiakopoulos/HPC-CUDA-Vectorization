@@ -1,0 +1,5 @@
+16384 particles: sfx=2.175682e-11 sfy=2.893330e-11 sfz=-2.131628e-13
+16384 particles: minfx=339.008944 maxfx=-347.695580
+16384 particles: minfy=409.483089 maxfy=-413.017489
+16384 particles: minfz=432.864766 maxfz=-398.260858
+Elapsed time=3.009994 seconds

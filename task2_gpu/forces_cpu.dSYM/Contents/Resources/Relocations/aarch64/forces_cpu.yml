@@ -1,0 +1,11 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     forces_cpu
+relocations:
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _get_wtime, symObjAddr: 0x0, symBinAddr: 0x100003858, symSize: 0x50 }
+  - { offsetInCU: 0xB6, offset: 0xB6, size: 0x8, addend: 0x0, symName: _get_wtime, symObjAddr: 0x0, symBinAddr: 0x100003858, symSize: 0x50 }
+  - { offsetInCU: 0x160, offset: 0x160, size: 0x8, addend: 0x0, symName: _initParticles, symObjAddr: 0x50, symBinAddr: 0x1000038A8, symSize: 0x98 }
+  - { offsetInCU: 0x1FC, offset: 0x1FC, size: 0x8, addend: 0x0, symName: _computeGravitationalForces, symObjAddr: 0xE8, symBinAddr: 0x100003940, symSize: 0x170 }
+  - { offsetInCU: 0x27C, offset: 0x27C, size: 0x8, addend: 0x0, symName: _printStatistics, symObjAddr: 0x258, symBinAddr: 0x100003AB0, symSize: 0x138 }
+  - { offsetInCU: 0x3F9, offset: 0x3F9, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x390, symBinAddr: 0x100003BE8, symSize: 0x2B0 }
+...

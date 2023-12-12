@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 
-//#define PRINTSTATS
+#define PRINTSTATS
 
 double get_wtime(void) {
   struct timeval t;
