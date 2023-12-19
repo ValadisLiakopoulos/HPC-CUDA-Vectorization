@@ -18,43 +18,47 @@ const float rm  = 0.1;      // Lenard-Jones, r_m
 float compute_force(float *positions, float x0)
 {
     float rm2 = rm * rm;
-    float force = 0.0;
-
+    __m128 force_vec = _mm_set1_ps(0);
     __m128 x0_vector = _mm_set1_ps(x0);
+    __m128 twelve_eps = _mm_set1_ps(12*eps);
 
     //we will be loading them 4 by 4 like SSE because 16 byte vectors
-    for (size_t i = 0; i < N; i += 4) {
+    //unroll the loop so the are being brought 8 by 8
+    for (size_t i = 0; i < N; i += 8) {
         
-        __m128 positions_vector = _mm_loadu_ps(&positions[i]);
+        __m128 positions_vector0 = _mm_loadu_ps(&positions[i]);
+        __m128 positions_vector1 = _mm_loadu_ps(&positions[i+4]);
 
         //float r = x0 - positions[i];
-        __m128 r_vector = _mm_sub_ps(x0_vector, positions_vector);
+        __m128 r_vector0 = _mm_sub_ps(x0_vector, positions_vector0);
+        __m128 r_vector1 = _mm_sub_ps(x0_vector, positions_vector1);
+
         //float r2 = r * r;
-        __m128 r2_vector = _mm_mul_ps(r_vector, r_vector);
+        __m128 r2_vector0 = _mm_mul_ps(r_vector0, r_vector0);
+        __m128 r2_vector1 = _mm_mul_ps(r_vector1, r_vector1);
+
         //float s2 = rm2 / r2;
-        __m128 s2_vector = _mm_div_ps(_mm_set1_ps(rm2), r2_vector);
+        __m128 s2_vector0 = _mm_div_ps(_mm_set1_ps(rm2), r2_vector0);
+        __m128 s2_vector1 = _mm_div_ps(_mm_set1_ps(rm2), r2_vector1);
+
         //float s6 = s2*s2*s2;
-        __m128 s6_vector = _mm_mul_ps(_mm_mul_ps(s2_vector, s2_vector), s2_vector);
+        __m128 s6_vector0 = _mm_mul_ps(_mm_mul_ps(s2_vector0, s2_vector0), s2_vector0);
+        __m128 s6_vector1 = _mm_mul_ps(_mm_mul_ps(s2_vector1, s2_vector1), s2_vector1);
 
 
         //force += 12 * eps * (s6*s6 - s6) / r;
-       __m128 term_vector = _mm_div_ps(_mm_mul_ps(_mm_set1_ps(12.0 * eps), _mm_sub_ps(_mm_mul_ps(s6_vector, s6_vector), s6_vector)), r_vector);
-        force += term_vector[0] + term_vector[1] + term_vector[2] + term_vector[3];
+        __m128 term_vector0 = _mm_div_ps(_mm_mul_ps(twelve_eps, _mm_sub_ps(_mm_mul_ps(s6_vector0, s6_vector0), s6_vector0)), r_vector0);
+        __m128 term_vector1 = _mm_div_ps(_mm_mul_ps(twelve_eps, _mm_sub_ps(_mm_mul_ps(s6_vector1, s6_vector1), s6_vector1)), r_vector1);
 
-        float r_values[4], r2_values[4],s2_values[4], s6_values[4],term_values[4];
-        _mm_storeu_ps(r_values, r_vector);
-        _mm_storeu_ps(r2_values, r2_vector);
-        _mm_storeu_ps(s2_values, s2_vector);
-        _mm_storeu_ps(s6_values, s6_vector);
-        _mm_storeu_ps(term_values, term_vector);
-        printf("r_vector values: %f %f %f %f\n", r_values[0], r_values[1], r_values[2], r_values[3]);
-        printf("r2_vector values: %f %f %f %f\n", r2_values[0], r2_values[1], r2_values[2], r2_values[3]);
-        printf("s2_vector values: %f %f %f %f\n", s2_values[0], s2_values[1], s2_values[2], s2_values[3]);
-        printf("s6_vector values: %f %f %f %f\n", s6_values[0], s6_values[1], s6_values[2], s6_values[3]);
-        printf("term_vector values: %f %f %f %f\n", term_values[0], term_values[1], term_values[2], term_values[3]);
-
-        //printf("force: %f\n", force);
+        force_vec = _mm_add_ps(force_vec, term_vector0);
+        force_vec = _mm_add_ps(force_vec, term_vector1);
+       //force += term_vector[0] + term_vector[1] + term_vector[2] + term_vector[3];
     }
+
+    //get the values from the force_vec, add them and send them back
+    float force_array[4];
+    _mm_storeu_ps(force_array, force_vec);
+    float force=force_array[0]+force_array[1]+force_array[2]+force_array[3];
 
     return force;
 }
@@ -65,8 +69,8 @@ int main(int argc, const char** argv)
 	srand48(1);
 
 	//declare,malloc && init positions
-    //float *positions;
-	float *positions = (float*)_mm_malloc(N * sizeof(float), 16);
+    //allign memory
+	float *positions = (float*)_mm_malloc(N * sizeof(float), 32);
 
 	for (size_t i=0; i<N; i++)
 		positions[i] = drand48()+0.1;
@@ -90,7 +94,7 @@ int main(int argc, const char** argv)
     end = get_wtime();
 
     //print results && elapsed time
-    for(size_t j = 0; j < 3; ++j )
+    for(size_t j = 0; j < 3; ++j)
         printf("Force acting at x_0=%lf : %lf\n", x0[j], f0[j]/repetitions);
 
     printf("elapsed time: %lf mus\n", 1e6*(end-start));
