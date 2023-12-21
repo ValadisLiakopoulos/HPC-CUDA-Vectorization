@@ -3,6 +3,9 @@
 #include <sys/time.h>
 #include <xmmintrin.h>
 
+//so i dont get the vectorization from the compiler
+#pragma GCC optimize("no-tree-vectorize")
+
 double get_wtime(void) {
   struct timeval t;
   gettimeofday(&t, NULL);
@@ -83,7 +86,7 @@ int main(int argc, const char** argv)
 
 	//declare,malloc && init positions
     //allign memory
-	float *positions = (float*)_mm_malloc(N * sizeof(float), 64);
+	float *positions = (float*)_mm_malloc(N * sizeof(float), 16);
 
 	for (size_t i=0; i<N; i++)
 		positions[i] = drand48()+0.1;
@@ -115,4 +118,3 @@ int main(int argc, const char** argv)
     _mm_free(positions);
     return 0;
 }
-
