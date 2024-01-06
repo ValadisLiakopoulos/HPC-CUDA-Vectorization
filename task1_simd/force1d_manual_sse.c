@@ -26,49 +26,26 @@ float compute_force(float *positions, float x0)
     __m128 twelve_eps = _mm_set1_ps(12*eps);
 
     //we will be loading them 4 by 4 like SSE because 16 byte vectors
-    //unroll the loop so the are being brought 8 by 8
-    for (size_t i = 0; i < N; i += 16) {
+    for (size_t i = 0; i < N; i += 4) {
+
+        __m128 positions_vector = _mm_loadu_ps(&positions[i]);
         
-        __m128 positions_vector0 = _mm_loadu_ps(&positions[i]);
-        __m128 positions_vector1 = _mm_loadu_ps(&positions[i+4]);
-        __m128 positions_vector2 = _mm_loadu_ps(&positions[i+8]);
-        __m128 positions_vector3 = _mm_loadu_ps(&positions[i+12]);
-
         //float r = x0 - positions[i];
-        __m128 r_vector0 = _mm_sub_ps(x0_vector, positions_vector0);
-        __m128 r_vector1 = _mm_sub_ps(x0_vector, positions_vector1);
-        __m128 r_vector2 = _mm_sub_ps(x0_vector, positions_vector2);
-        __m128 r_vector3 = _mm_sub_ps(x0_vector, positions_vector3);
-
+        __m128 r_vector = _mm_sub_ps(x0_vector, positions_vector);
+        
         //float r2 = r * r;
-        __m128 r2_vector0 = _mm_mul_ps(r_vector0, r_vector0);
-        __m128 r2_vector1 = _mm_mul_ps(r_vector1, r_vector1);
-        __m128 r2_vector2 = _mm_mul_ps(r_vector2, r_vector2);
-        __m128 r2_vector3 = _mm_mul_ps(r_vector3, r_vector3);
-
+        __m128 r2_vector = _mm_mul_ps(r_vector, r_vector);
+        
         //float s2 = rm2 / r2;
-        __m128 s2_vector0 = _mm_div_ps(_mm_set1_ps(rm2), r2_vector0);
-        __m128 s2_vector1 = _mm_div_ps(_mm_set1_ps(rm2), r2_vector1);
-        __m128 s2_vector2 = _mm_div_ps(_mm_set1_ps(rm2), r2_vector2);
-        __m128 s2_vector3 = _mm_div_ps(_mm_set1_ps(rm2), r2_vector3);
-
+        __m128 s2_vector = _mm_div_ps(_mm_set1_ps(rm2), r2_vector);
+        
         //float s6 = s2*s2*s2;
-        __m128 s6_vector0 = _mm_mul_ps(_mm_mul_ps(s2_vector0, s2_vector0), s2_vector0);
-        __m128 s6_vector1 = _mm_mul_ps(_mm_mul_ps(s2_vector1, s2_vector1), s2_vector1);
-        __m128 s6_vector2 = _mm_mul_ps(_mm_mul_ps(s2_vector2, s2_vector2), s2_vector2);
-        __m128 s6_vector3 = _mm_mul_ps(_mm_mul_ps(s2_vector3, s2_vector3), s2_vector3);
-
+        __m128 s6_vector = _mm_mul_ps(_mm_mul_ps(s2_vector, s2_vector), s2_vector);
+       
         //force += 12 * eps * (s6*s6 - s6) / r;
-        __m128 term_vector0 = _mm_div_ps(_mm_mul_ps(twelve_eps, _mm_sub_ps(_mm_mul_ps(s6_vector0, s6_vector0), s6_vector0)), r_vector0);
-        __m128 term_vector1 = _mm_div_ps(_mm_mul_ps(twelve_eps, _mm_sub_ps(_mm_mul_ps(s6_vector1, s6_vector1), s6_vector1)), r_vector1);
-        __m128 term_vector2 = _mm_div_ps(_mm_mul_ps(twelve_eps, _mm_sub_ps(_mm_mul_ps(s6_vector2, s6_vector2), s6_vector2)), r_vector2);
-        __m128 term_vector3 = _mm_div_ps(_mm_mul_ps(twelve_eps, _mm_sub_ps(_mm_mul_ps(s6_vector3, s6_vector3), s6_vector3)), r_vector3);
-
-        force_vec = _mm_add_ps(force_vec, term_vector0);
-        force_vec = _mm_add_ps(force_vec, term_vector1);
-        force_vec = _mm_add_ps(force_vec, term_vector2);
-        force_vec = _mm_add_ps(force_vec, term_vector3);
-       //force += term_vector[0] + term_vector[1] + term_vector[2] + term_vector[3];
+        __m128 term_vector = _mm_div_ps(_mm_mul_ps(twelve_eps, _mm_sub_ps(_mm_mul_ps(s6_vector, s6_vector), s6_vector)), r_vector);
+    
+        force_vec = _mm_add_ps(force_vec, term_vector);
     }
 
     //get the values from the force_vec, add them and send them back

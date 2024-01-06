@@ -19,3 +19,7 @@ force1d_manual_avx: force1d_manual_avx.c
 .PHONY:
 clean:
 	rm -f force1d_sse force1d_avx force1d_serial force1d_manual_sse force1d_manual_avx
+
+
+#gcc -msse4 -dM -E - < /dev/null | egrep "SSE|AVX" | sort
+#gcc -mavx -dM -E - < /dev/null | egrep "SSE|AVX" | sort
